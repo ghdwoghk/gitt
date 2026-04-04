@@ -1,3 +1,93 @@
-가나디라마
-abcde
-efghij
+● import curses                                                                                                                                                                                                                                
+  import random                                                                                                                                                                                                                                
+  import time
+                                                                                                                                                                                                                                                 def main(stdscr):                                                                                                                                                                                                                                  curses.curs_set(0)                                                                                                                                                                                                                       
+      stdscr.nodelay(True)                                                                                                                                                                                                                     
+      stdscr.timeout(100)
+
+      height, width = stdscr.getmaxyx()
+
+      # 게임 영역
+      box_h, box_w = min(20, height - 2), min(40, width - 2)
+      start_y, start_x = (height - box_h) // 2, (width - box_w) // 2
+
+      # 색상 설정
+      curses.start_color()
+      curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)   # 뱀
+      curses.init_pair(2, curses.COLOR_RED,   curses.COLOR_BLACK)   # 먹이
+      curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)   # 테두리/텍스트
+      curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # 점수
+
+      def draw_border():
+          for y in range(box_h):
+              for x in range(box_w):
+                  if y == 0 or y == box_h - 1:
+                      stdscr.addch(start_y + y, start_x + x, '#', curses.color_pair(3))
+                  elif x == 0 or x == box_w - 1:
+                      stdscr.addch(start_y + y, start_x + x, '#', curses.color_pair(3))
+
+      def new_food(snake):
+          while True:
+              fy = random.randint(1, box_h - 2)
+              fx = random.randint(1, box_w - 2)
+              if [fy, fx] not in snake:
+                  return [fy, fx]
+
+      snake = [[box_h // 2, box_w // 2]]
+      direction = [0, 1]
+      food = new_food(snake)
+      score = 0
+
+      while True:
+          key = stdscr.getch()
+
+          if key == curses.KEY_UP    and direction != [1, 0]:  direction = [-1, 0]
+          elif key == curses.KEY_DOWN  and direction != [-1, 0]: direction = [1, 0]
+          elif key == curses.KEY_LEFT  and direction != [0, 1]:  direction = [0, -1]
+          elif key == curses.KEY_RIGHT and direction != [0, -1]: direction = [0, 1]
+          elif key in (ord('q'), ord('Q')):
+              break
+
+          head = [snake[0][0] + direction[0], snake[0][1] + direction[1]]
+
+          # 벽 또는 자신과 충돌
+          if (head[0] <= 0 or head[0] >= box_h - 1 or
+                  head[1] <= 0 or head[1] >= box_w - 1 or
+                  head in snake):
+              break
+
+          snake.insert(0, head)
+
+          if head == food:
+              score += 10
+              food = new_food(snake)
+          else:
+              snake.pop()
+
+          stdscr.clear()
+          draw_border()
+
+          # 먹이
+          stdscr.addch(start_y + food[0], start_x + food[1], '@', curses.color_pair(2))
+
+          # 뱀
+          for i, seg in enumerate(snake):
+              ch = 'O' if i == 0 else 'o'
+              stdscr.addch(start_y + seg[0], start_x + seg[1], ch, curses.color_pair(1))
+
+          # 점수
+          stdscr.addstr(start_y - 1, start_x, f" 점수: {score} | 방향키: 이동 | Q: 종료 ", curses.color_pair(4))
+
+          stdscr.refresh()
+
+      # 게임 오버
+      stdscr.clear()
+      msg = f"게임 오버! 최종 점수: {score}"
+      stdscr.addstr(height // 2, (width - len(msg)) // 2, msg, curses.color_pair(2) | curses.A_BOLD)
+      stdscr.addstr(height // 2 + 1, (width - 20) // 2, "아무 키나 누르면 종료...", curses.color_pair(3))
+      stdscr.nodelay(False)
+      stdscr.getch()
+
+
+  if __name__ == "__main__":
+      curses.wrapper(main)
