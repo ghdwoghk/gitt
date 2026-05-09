@@ -1,93 +1,224 @@
-● import curses                                                                                                                                                                                                                                
-  import random                                                                                                                                                                                                                                
-  import time
-                                                                                                                                                                                                                                                 def main(stdscr):                                                                                                                                                                                                                                  curses.curs_set(0)                                                                                                                                                                                                                       
-      stdscr.nodelay(True)                                                                                                                                                                                                                     
-      stdscr.timeout(100)
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>C Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-focus">본문으로 건너뛰기</a>
 
-      height, width = stdscr.getmaxyx()
+    <div class="app">
+      <aside class="sidebar" aria-label="사이드 메뉴">
+        <a id="brand-link" class="brand brand-link" href="#home" title="메인으로">
+          <span class="brand-mark" aria-hidden="true">C</span>
+          <div class="brand-text">
+            <strong>C Studio</strong>
+            <span>문제 · 에디터 · 기록</span>
+          </div>
+        </a>
 
-      # 게임 영역
-      box_h, box_w = min(20, height - 2), min(40, width - 2)
-      start_y, start_x = (height - box_h) // 2, (width - box_w) // 2
+        <nav class="sidebar-nav" aria-label="바로가기">
+          <a class="nav-pill" href="#home" data-nav="home">메인</a>
+          <a class="nav-pill" href="#1000" data-nav="first">첫 문제</a>
+        </nav>
 
-      # 색상 설정
-      curses.start_color()
-      curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)   # 뱀
-      curses.init_pair(2, curses.COLOR_RED,   curses.COLOR_BLACK)   # 먹이
-      curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_BLACK)   # 테두리/텍스트
-      curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # 점수
+        <div class="sidebar-tools">
+          <label class="sr-only" for="sidebar-search">문제 검색</label>
+          <input
+            id="sidebar-search"
+            class="sidebar-search"
+            type="search"
+            placeholder="번호 · 제목 · 태그 검색…"
+            autocomplete="off"
+          />
+          <div class="filter-row" role="group" aria-label="난이도 필터">
+            <button type="button" class="chip chip-filter is-on" data-tier="all">전체</button>
+            <button type="button" class="chip chip-filter" data-tier="bronze">브론즈</button>
+            <button type="button" class="chip chip-filter" data-tier="silver">실버</button>
+            <button type="button" class="chip chip-filter" data-tier="gold">골드</button>
+          </div>
+        </div>
 
-      def draw_border():
-          for y in range(box_h):
-              for x in range(box_w):
-                  if y == 0 or y == box_h - 1:
-                      stdscr.addch(start_y + y, start_x + x, '#', curses.color_pair(3))
-                  elif x == 0 or x == box_w - 1:
-                      stdscr.addch(start_y + y, start_x + x, '#', curses.color_pair(3))
+        <nav class="lesson-nav" aria-label="문제 목록">
+          <p class="nav-label">문제 <span id="problem-count-label" class="nav-count"></span></p>
+          <ul id="problem-list" class="lesson-list"></ul>
+        </nav>
 
-      def new_food(snake):
-          while True:
-              fy = random.randint(1, box_h - 2)
-              fx = random.randint(1, box_w - 2)
-              if [fy, fx] not in snake:
-                  return [fy, fx]
+        <div class="sidebar-footer">
+          <div class="tool-grid">
+            <button type="button" class="tool-btn" id="btn-theme" title="테마 전환">라이트 모드</button>
+            <button type="button" class="tool-btn" id="btn-shortcuts" title="단축키 (? )">단축키</button>
+            <div class="font-tools">
+              <span class="tool-label">글꼴</span>
+              <button type="button" class="tool-btn sm" id="btn-font-down" aria-label="코드 글자 작게">A−</button>
+              <button type="button" class="tool-btn sm" id="btn-font-up" aria-label="코드 글자 크게">A+</button>
+            </div>
+          </div>
+          <div class="entry-box">
+            <p class="entry-title">이 페이지 주소</p>
+            <a id="site-entry-link" class="entry-url" href="index.html">로딩 중…</a>
+          </div>
+          <p class="hint">코드는 브라우저에 임시 저장됩니다. 채점은 백엔드 연결 시.</p>
+        </div>
+      </aside>
 
-      snake = [[box_h // 2, box_w // 2]]
-      direction = [0, 1]
-      food = new_food(snake)
-      score = 0
+      <div class="main-column" id="main-focus" tabindex="-1">
+        <!-- 메인 홈 -->
+        <section id="view-home" class="view view-home" aria-label="메인 화면">
+          <header class="home-hero">
+            <div class="home-hero-glow" aria-hidden="true"></div>
+            <div class="home-hero-inner">
+              <p class="home-badge">브라우저만 있으면 바로 연습</p>
+              <h1 class="home-title">C Studio</h1>
+              <p class="home-subtitle">
+                백준 스타일 문제와 에디터를 한곳에. 검색·난이도 필터·북마크·자동 저장까지, 팀 과제와 개인
+                연습 모두에 맞춰 두었습니다.
+              </p>
+              <div class="home-cta-block">
+                <button type="button" class="btn btn-cta-primary" id="btn-start">시작하기</button>
+                <div class="home-cta-sub">
+                  <a class="home-link-btn" id="btn-continue" href="#1000">이어서 풀기</a>
+                  <span class="home-cta-dot" aria-hidden="true">·</span>
+                  <a class="home-link-btn" href="#all-problems">문제 목록으로</a>
+                </div>
+              </div>
+            </div>
+          </header>
 
-      while True:
-          key = stdscr.getch()
+          <div class="home-shell">
+            <section class="home-pitch" aria-labelledby="pitch-title">
+              <h2 id="pitch-title" class="home-pitch-title">이런 점이 편해요</h2>
+              <ul class="home-pitch-list">
+                <li><strong>집중</strong> — 문제·입출력·코드 창이 나란히, 영상 없이 풀이만.</li>
+                <li><strong>기록</strong> — 풀다 멈춰도 코드가 기기에 남고, 완료·북마크로 진행이 보입니다.</li>
+                <li><strong>확장</strong> — 실행·채점은 백엔드만 붙이면 실제 채점으로 바꿀 수 있어요.</li>
+              </ul>
+            </section>
 
-          if key == curses.KEY_UP    and direction != [1, 0]:  direction = [-1, 0]
-          elif key == curses.KEY_DOWN  and direction != [-1, 0]: direction = [1, 0]
-          elif key == curses.KEY_LEFT  and direction != [0, 1]:  direction = [0, -1]
-          elif key == curses.KEY_RIGHT and direction != [0, -1]: direction = [0, 1]
-          elif key in (ord('q'), ord('Q')):
-              break
+            <div class="home-stats" id="home-stats"></div>
 
-          head = [snake[0][0] + direction[0], snake[0][1] + direction[1]]
+            <section class="home-features-wrap" aria-labelledby="features-title">
+              <h2 id="features-title" class="home-section-head">주요 기능</h2>
+              <p class="home-section-lead">자주 쓰는 흐름을 빠르게 쓸 수 있게 모았습니다.</p>
+              <div class="home-features" id="home-features"></div>
+            </section>
 
-          # 벽 또는 자신과 충돌
-          if (head[0] <= 0 or head[0] >= box_h - 1 or
-                  head[1] <= 0 or head[1] >= box_w - 1 or
-                  head in snake):
-              break
+            <section class="home-section">
+              <h2 class="home-section-head">입문 추천</h2>
+              <p class="home-section-lead">처음이면 여기부터 풀어보세요.</p>
+              <div class="home-cards" id="home-featured"></div>
+            </section>
 
-          snake.insert(0, head)
+            <section class="home-section" id="all-problems">
+              <h2 class="home-section-head">전체 문제</h2>
+              <p class="home-section-lead">난이도·태그·번호로 사이드바에서도 찾을 수 있어요.</p>
+              <div class="home-grid" id="home-all-problems"></div>
+            </section>
+          </div>
 
-          if head == food:
-              score += 10
-              food = new_food(snake)
-          else:
-              snake.pop()
+          <footer class="home-foot">
+            <p><kbd>Ctrl</kbd>+<kbd>Enter</kbd> 실행 · <kbd>Ctrl</kbd>+<kbd>S</kbd> 저장 · <kbd>?</kbd> 단축키</p>
+          </footer>
+        </section>
 
-          stdscr.clear()
-          draw_border()
+        <!-- 문제 풀이 -->
+        <section id="view-problem" class="view view-problem is-hidden" aria-label="문제 풀이" hidden>
+          <header class="topbar">
+            <div class="breadcrumb">
+              <a class="crumb-link" href="#home">메인</a>
+              <span class="sep" aria-hidden="true">/</span>
+              <span id="problem-meta" class="problem-meta">1000번</span>
+              <span class="sep" aria-hidden="true">|</span>
+              <h1 id="problem-title" class="lesson-title">Hello, World!</h1>
+            </div>
+            <div class="topbar-actions">
+              <button type="button" class="btn btn-icon" id="btn-bookmark" title="북마크">☆</button>
+              <button type="button" class="btn btn-ghost" id="btn-copy-code" title="코드 복사">코드 복사</button>
+              <button type="button" class="btn btn-ghost" id="btn-mark-solved" title="연습 완료로 표시">완료 체크</button>
+              <button type="button" class="btn btn-ghost" id="btn-reset" title="초기 템플릿 + 저장 초기화">초기화</button>
+              <button type="button" class="btn btn-primary" id="btn-run">실행</button>
+              <button type="button" class="btn btn-secondary" id="btn-submit">제출</button>
+            </div>
+          </header>
 
-          # 먹이
-          stdscr.addch(start_y + food[0], start_x + food[1], '@', curses.color_pair(2))
+          <div class="content">
+            <section class="panel panel-readme" aria-labelledby="readme-heading">
+              <div class="panel-readme-head">
+                <h2 id="readme-heading" class="panel-title">문제</h2>
+                <div class="readme-actions">
+                  <button type="button" class="btn-text" id="btn-collapse-all">예제 접기</button>
+                </div>
+              </div>
+              <div id="readme-body" class="readme-body prose"></div>
+              <div class="tags" id="problem-tags"></div>
+              <div class="share-row problem-share">
+                <span class="share-label">이 문제 링크</span>
+                <a id="lesson-share-link" class="share-link" href="#1000">#1000</a>
+                <button type="button" class="btn-text share-copy" id="btn-copy-link">복사</button>
+              </div>
+            </section>
 
-          # 뱀
-          for i, seg in enumerate(snake):
-              ch = 'O' if i == 0 else 'o'
-              stdscr.addch(start_y + seg[0], start_x + seg[1], ch, curses.color_pair(1))
+            <section class="editor-stack" aria-label="코드">
+              <div class="panel panel-editor">
+                <div class="panel-head">
+                  <span class="panel-title">main.c</span>
+                  <div class="panel-head-right">
+                    <span class="save-indicator" id="save-indicator" aria-live="polite"></span>
+                    <span class="panel-meta" id="line-col">줄 1, 열 1</span>
+                  </div>
+                </div>
+                <div class="editor-wrap">
+                  <div class="line-gutter" id="line-gutter" aria-hidden="true"></div>
+                  <textarea
+                    id="code-input"
+                    class="code-input"
+                    spellcheck="false"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    rows="18"
+                  ></textarea>
+                </div>
+              </div>
 
-          # 점수
-          stdscr.addstr(start_y - 1, start_x, f" 점수: {score} | 방향키: 이동 | Q: 종료 ", curses.color_pair(4))
+              <div class="panel panel-output">
+                <div class="panel-head">
+                  <span class="panel-title">채점 / 출력</span>
+                  <button type="button" class="btn-text" id="btn-clear-output">비우기</button>
+                </div>
+                <pre id="output" class="output" role="status">백엔드 연결 후 여기에 결과가 나옵니다.</pre>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </div>
 
-          stdscr.refresh()
+    <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
-      # 게임 오버
-      stdscr.clear()
-      msg = f"게임 오버! 최종 점수: {score}"
-      stdscr.addstr(height // 2, (width - len(msg)) // 2, msg, curses.color_pair(2) | curses.A_BOLD)
-      stdscr.addstr(height // 2 + 1, (width - 20) // 2, "아무 키나 누르면 종료...", curses.color_pair(3))
-      stdscr.nodelay(False)
-      stdscr.getch()
+    <div id="modal-backdrop" class="modal-backdrop is-hidden" hidden>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-head">
+          <h2 id="modal-title" class="modal-title">단축키</h2>
+          <button type="button" class="btn-text modal-close" id="modal-close" aria-label="닫기">✕</button>
+        </div>
+        <ul class="shortcut-list">
+          <li><kbd>Ctrl</kbd> + <kbd>Enter</kbd> <span>실행 (데모)</span></li>
+          <li><kbd>Ctrl</kbd> + <kbd>S</kbd> <span>임시 저장</span></li>
+          <li><kbd>?</kbd> <span>이 창 열기 / 닫기</span></li>
+          <li><kbd>Esc</kbd> <span>창 닫기</span></li>
+        </ul>
+        <p class="modal-note">백엔드 연결 시 실행·제출이 실제 동작으로 바뀝니다.</p>
+      </div>
+    </div>
 
-
-  if __name__ == "__main__":
-      curses.wrapper(main)
+    <script src="app.js"></script>
+  </body>
+</html>
